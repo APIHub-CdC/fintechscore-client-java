@@ -145,7 +145,7 @@ key_alias=cdc
 key_password=your_super_secure_password
 ```
 ### Paso 5. Modificar URL
-En el archivo ApiTest.java, que se encuentra en ***src/test/java/com/cdc/apihub/mx/FintechScore/test/***. Se deberá modificar los datos de la petición y los datos de consumo:
+En el archivo ApiTest.java, que se encuentra en ***/src/test/java/io/FintechScore/client/api***. Se deberá modificar los datos de la petición y los datos de consumo:
 
 1. Configurar ubicación y acceso de la llave creado en el **paso 1** y el certificado descargado en el **paso 2**
    - keystoreFile: ubicacion del archivo keystore.jks
@@ -166,89 +166,77 @@ En el archivo ApiTest.java, que se encuentra en ***src/test/java/com/cdc/apihub/
 
 ```java
 
-package com.cdc.apihub.mx.FintechScore.test;
+package io.FintechScore.client.api;
 ...
-
-public class ApiTest {
+public class FintechScoreApiTest {
     private final FintechScoreApi api = new FintechScoreApi();
-	private Logger logger = LoggerFactory.getLogger(ApiTest.class.getName());
-
-	private ApiClient apiClient;
+	private Logger logger = LoggerFactory.getLogger(FintechScoreApiTest.class.getName());
 	
-    private String keystoreFile = "your_path_for_your_keystore/keystore.jks";
-    private String cdcCertFile = "your_path_for_certificate_of_cdc/cdc_cert.pem";
-    private String keystorePassword = "your_super_secure_keystore_password";
-    private String keyAlias = "your_key_alias";
-    private String keyPassword = "your_super_secure_password";
+	private String keystoreFile = "/your_path/keystore.jks";
+	private String cdcCertFile = "/your_path/cdc_cert.pem";
+	private String keystorePassword = "your_password";
+	private String keyAlias = "your_alias";
+	private String keyPassword = "your_key_password";
     
-    private String usernameCDC = "your_username_otrorgante";
-    private String passwordCDC = "your_password_otorgante"; 
     
-    private String url = "the_url";
-    private String xApiKey = "X_Api_Key";
-	
-	private SignerInterceptor interceptor;
-	
-	@Before()
-	public void setUp() {
-		interceptor = new SignerInterceptor(keystoreFile, cdcCertFile, keystorePassword, keyAlias, keyPassword);
-		this.apiClient = api.getApiClient();
-		this.apiClient.setBasePath(url);
-		OkHttpClient okHttpClient = new OkHttpClient().newBuilder()
-			    .readTimeout(30, TimeUnit.SECONDS)
-			    .addInterceptor(interceptor)
-			    .build();
+    @Before()
+    public void setUp() {
+    	 
+    	ApiClient apiClient = api.getApiClient();
+		apiClient.setBasePath("your-basepath");
+		OkHttpClient okHttpClient = new OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS)
+				.addInterceptor(new SignerInterceptor(keystoreFile, cdcCertFile, keystorePassword, keyAlias, keyPassword)).build();
 		apiClient.setHttpClient(okHttpClient);
-	}
+    }
     
     @Test
-    public void getReporteTest() throws ApiException {
+    public void getReporteTest() throws Exception {
+    	String xApiKey = "Your Apikey";
+        String username = "Your User";
+        String password = "Your Password";
         
-        Peticion body = new Peticion();
+        Peticion request = new Peticion();
+    	request.setFolioOtorgante("");
         Persona persona = new Persona();
         Domicilio domicilio = new Domicilio();
-        
-        Integer estatusOK = 200;
-        Integer estatusNoContent = 204;
-        
-        try {
-        	
-        	domicilio.setDireccion("AV 535 84");
-            domicilio.setCiudad( "CIUDAD DE MEXICO");
-            domicilio.setColoniaPoblacion("SAN JUAN DE ARAGON 1RA SECC");
-            domicilio.setDelegacionMunicipio("GUSTAVO A MADERO");
-            domicilio.setCP("07969");
-            domicilio.setEstado(CatalogoEstados.CDMX);
-            domicilio.setPais(CatalogoPais.MX);
-            
-            persona.setPrimerNombre("PABLO");
-            persona.setSegundoNombre("ANTONIO");
-            persona.setApellidoPaterno("PRUEBA");
-            persona.setApellidoMaterno("ALVAREZ");
-            persona.setFechaNacimiento("1985-03-16");
-            persona.setRFC("PUAP850316MI1");
-            persona.setDomicilio(domicilio);
-            
-            body.setFolioOtorgante("20210307");
-            body.setPersona(persona);
-            
-            ApiResponse<?>  response = api.getGenericReporte(xApiKey, usernameCDC, passwordCDC, body);
-            
-        	Assert.assertTrue(estatusOK.equals(response.getStatusCode()));
-            
-            if(estatusOK.equals(response.getStatusCode())) {
-                Respuesta responseOK = (Respuesta) response.getData();
-                logger.info(responseOK.toString());
-            }
+    	request.setPersona(persona);
 
-        } catch (ApiException e) {
-            if(!estatusNoContent.equals(e.getCode())) {
-                logger.info(e.getResponseBody());
-            }
-            Assert.assertTrue(estatusOK.equals(e.getCode()));           
-        }
+        domicilio.setDireccion("");
+        domicilio.setColoniaPoblacion("");
+        domicilio.setDelegacionMunicipio("");
+        domicilio.setCiudad("");
+        domicilio.setEstado(CatalogoEstados.CDMX);
+        domicilio.setCP("");
+        domicilio.setPais(CatalogoPais.MX);
+        persona.setApellidoPaterno("");
+        persona.setApellidoMaterno("");
+        persona.setPrimerNombre("");
+        persona.setFechaNacimiento("");
+        persona.setRFC("");
+        persona.setDomicilio(domicilio);
+        Respuesta response = api.getReporte( xApiKey, username, password, request);
+        logger.info("Report: "+response.toString());
+        
+        Assert.assertTrue(response.getFolioConsulta() != null);
+    }
+   
+   @Test
+    public void getReporteFolio() throws Exception {
+    	String xApiKey = "Your Apikey";
+        String username = "Your User";
+        String password = "Your Password";
+    	PeticionFolio request = new PeticionFolio();
+    	
+    	request.setFolioOtorgante("");
+    	request.setFolioConsulta("");
+        
+        Respuesta response = api.getReporteFolio(xApiKey, username, password, request);
+        logger.info("Report Folio: "+response.toString());
+        
+        Assert.assertTrue(response.getFolioConsulta() != null);
     }
 }
+
 ```
 ### Paso 6. Ejecutar la prueba unitaria
 
